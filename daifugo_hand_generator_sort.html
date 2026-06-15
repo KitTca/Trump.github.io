@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大富豪 手札ジェネレーター</title>
+<style>
+body{font-family:sans-serif;background:#0b6b3a;color:#fff;padding:16px}
+#cards{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+button.card{padding:8px;border-radius:6px;background:#fff}
+#hand{background:#fff;padding:16px;min-height:140px;border-radius:8px;margin-top:16px;overflow-x:auto;white-space:nowrap}
+.playing-card{display:inline-flex;flex-direction:column;justify-content:space-between;width:60px;height:90px;border:1px solid #000;border-radius:6px;background:#fff;margin-right:6px;padding:4px;box-sizing:border-box}
+.red{color:#d00}.black{color:#000}
+</style></head><body>
+
+<h2>大富豪 手札ジェネレーター（自動ソート付き）</h2>
+<div id="cards"></div>
+<p>
+<button onclick="sortHand()">自動ソート</button>
+<button onclick="resetHand()">全消去</button>
+</p>
+<div id="hand"></div>
+
+<script>
+const hand=document.getElementById('hand');
+const cards=[];
+
+const suits=[["♠","black"],["♥","red"],["♦","red"],["♣","black"]];
+const ranks=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+
+const order={"3":0,"4":1,"5":2,"6":3,"7":4,"8":5,"9":6,"10":7,"J":8,"Q":9,"K":10,"A":11,"2":12,"JOKER":13};
+
+function render(){
+ hand.innerHTML="";
+ cards.forEach((card,i)=>{
+   const d=document.createElement("div");
+   d.className="playing-card "+card.color;
+   d.innerHTML=card.html;
+   d.onclick=()=>{cards.splice(i,1);render();};
+   hand.appendChild(d);
+ });
+}
+
+function addCard(suit,rank,color){
+ cards.push({
+   rank,color,
+   html:`<div>${suit}${rank}</div><div style="text-align:center;font-size:22px">${suit}</div><div style="text-align:right">${rank}${suit}</div>`
+ });
+ render();
+}
+
+function addJoker(){
+ cards.push({
+   rank:"JOKER",color:"black",
+   html:`<div>JOKER</div><div style="text-align:center;font-size:18px">★</div><div style="text-align:right">JOKER</div>`
+ });
+ render();
+}
+
+function sortHand(){
+ cards.sort((a,b)=>order[a.rank]-order[b.rank]);
+ render();
+}
+
+function resetHand(){cards.length=0;render();}
+
+const area=document.getElementById("cards");
+for(const [suit,color] of suits){
+ for(const rank of ranks){
+  const b=document.createElement("button");
+  b.className="card";
+  b.textContent=suit+rank;
+  b.onclick=()=>addCard(suit,rank,color);
+  area.appendChild(b);
+ }
+}
+for(let i=0;i<2;i++){
+ const b=document.createElement("button");
+ b.className="card";
+ b.textContent="Joker";
+ b.onclick=addJoker;
+ area.appendChild(b);
+}
+</script>
+</body></html>
