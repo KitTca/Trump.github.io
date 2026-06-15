@@ -43,14 +43,22 @@ button{
     cursor:pointer;
 }
 
-#hand{
-    min-height:140px;
+#captureArea{
+    display:inline-block;
     background:white;
     padding:20px;
     border-radius:10px;
-    overflow-x:auto;
-    overflow-y:visible;
-    white-space:nowrap;
+}
+
+#hand{
+    min-height:140px;
+
+    display:flex;
+    flex-wrap:wrap;
+
+    align-items:flex-start;
+
+    gap:0;
 }
 
 /* カード */
@@ -108,7 +116,8 @@ button{
 }
 
 .rank{
-    font-size:18px;
+    font-size:16px;
+    letter-spacing:-1px;
 }
 
 .suit{
@@ -129,6 +138,17 @@ button{
     opacity:0.85;
 }
 
+.capture-mode{
+
+    display:flex !important;
+
+    flex-wrap:wrap !important;
+
+    width:900px;
+
+    align-content:flex-start;
+}
+
 </style>
 </head>
 
@@ -144,7 +164,9 @@ button{
 
 <div id="cardSelector"></div>
 
-<div id="hand"></div>
+<div id="captureArea">
+    <div id="hand"></div>
+</div>
 
 <script>
 
@@ -190,17 +212,23 @@ const selector=document.getElementById("cardSelector");
 
 /* カード選択ボタン生成 */
 
-for(const [suit,color] of suits){
+const displayRanks = [
+    "3","4","5","6","7",
+    "8","9","10","J",
+    "Q","K","A","2"
+];
 
-    for(const rank of ranks){
+for(const rank of displayRanks){
 
-        const btn=document.createElement("button");
+    for(const [suit,color] of suits){
 
-        btn.className="selectCard";
+        const btn = document.createElement("button");
 
-        btn.textContent=suit + rank;
+        btn.className = "selectCard";
 
-        btn.onclick=()=>{
+        btn.textContent = suit + rank;
+
+        btn.onclick = () => {
 
             cards.push({
                 suit,
@@ -359,13 +387,23 @@ function resetHand(){
 
 async function savePNG(){
 
+    const hand =
+        document.getElementById("hand");
+
+    hand.classList.add("capture-mode");
+
+    await new Promise(r =>
+        setTimeout(r,100));
+
     const canvas = await html2canvas(
-        document.getElementById("hand"),
+        document.getElementById("captureArea"),
         {
             scale:3,
             backgroundColor:"#ffffff"
         }
     );
+
+    hand.classList.remove("capture-mode");
 
     const link=document.createElement("a");
 
