@@ -1,83 +1,385 @@
 <!DOCTYPE html>
-<html lang="ja"><head><meta charset="UTF-8">
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>大富豪 手札ジェネレーター</title>
-<style>
-body{font-family:sans-serif;background:#0b6b3a;color:#fff;padding:16px}
-#cards{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
-button.card{padding:8px;border-radius:6px;background:#fff}
-#hand{background:#fff;padding:16px;min-height:140px;border-radius:8px;margin-top:16px;overflow-x:auto;white-space:nowrap}
-.playing-card{display:inline-flex;flex-direction:column;justify-content:space-between;width:60px;height:90px;border:1px solid #000;border-radius:6px;background:#fff;margin-right:6px;padding:4px;box-sizing:border-box}
-.red{color:#d00}.black{color:#000}
-</style></head><body>
 
-<h2>大富豪 手札ジェネレーター（自動ソート付き）</h2>
-<div id="cards"></div>
-<p>
-<button onclick="sortHand()">自動ソート</button>
-<button onclick="resetHand()">全消去</button>
-</p>
+<title>大富豪 手札ジェネレーター</title>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<style>
+
+body{
+    margin:20px;
+    font-family:sans-serif;
+    background:#0b6b3a;
+}
+
+h1{
+    color:white;
+}
+
+.controls{
+    margin-bottom:15px;
+}
+
+button{
+    margin:3px;
+}
+
+#cardSelector{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:6px;
+    margin-bottom:20px;
+}
+
+.selectCard{
+    padding:8px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+#hand{
+    min-height:140px;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    overflow-x:auto;
+    overflow-y:visible;
+    white-space:nowrap;
+}
+
+/* カード */
+
+.playing-card{
+
+    position:relative;
+
+    width:70px;
+    height:100px;
+
+    display:inline-block;
+
+    background:white;
+
+    border:1px solid black;
+    border-radius:8px;
+
+    margin-left:-50px;
+
+    vertical-align:top;
+
+    cursor:grab;
+
+    user-select:none;
+
+    box-sizing:border-box;
+}
+
+.playing-card:first-child{
+    margin-left:0;
+}
+
+.red{
+    color:#d00000;
+}
+
+.black{
+    color:black;
+}
+
+.corner{
+
+    position:absolute;
+
+    top:6px;
+    left:6px;
+
+    display:flex;
+    flex-direction:column;
+
+    line-height:1;
+
+    font-weight:bold;
+}
+
+.rank{
+    font-size:18px;
+}
+
+.suit{
+    font-size:18px;
+}
+
+.centerSuit{
+
+    position:absolute;
+
+    left:50%;
+    top:50%;
+
+    transform:translate(-50%,-50%);
+
+    font-size:32px;
+
+    opacity:0.85;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>大富豪 手札ジェネレーター</h1>
+
+<div class="controls">
+    <button onclick="sortHand()">自動ソート</button>
+    <button onclick="resetHand()">全消去</button>
+    <button onclick="savePNG()">PNG保存</button>
+</div>
+
+<div id="cardSelector"></div>
+
 <div id="hand"></div>
 
 <script>
-const hand=document.getElementById('hand');
+
 const cards=[];
 
-const suits=[["♠","black"],["♥","red"],["♦","red"],["♣","black"]];
-const ranks=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+const suits=[
+    ["♠","black"],
+    ["♥","red"],
+    ["♦","red"],
+    ["♣","black"]
+];
 
-const order={"3":0,"4":1,"5":2,"6":3,"7":4,"8":5,"9":6,"10":7,"J":8,"Q":9,"K":10,"A":11,"2":12,"JOKER":13};
+const ranks=[
+    "A","2","3","4","5","6","7",
+    "8","9","10","J","Q","K"
+];
+
+const rankOrder={
+    "3":0,
+    "4":1,
+    "5":2,
+    "6":3,
+    "7":4,
+    "8":5,
+    "9":6,
+    "10":7,
+    "J":8,
+    "Q":9,
+    "K":10,
+    "A":11,
+    "2":12,
+    "JOKER":13
+};
+
+const suitOrder={
+    "♠":0,
+    "♥":1,
+    "♦":2,
+    "♣":3
+};
+
+const selector=document.getElementById("cardSelector");
+
+/* カード選択ボタン生成 */
+
+for(const [suit,color] of suits){
+
+    for(const rank of ranks){
+
+        const btn=document.createElement("button");
+
+        btn.className="selectCard";
+
+        btn.textContent=suit + rank;
+
+        btn.onclick=()=>{
+
+            cards.push({
+                suit,
+                rank,
+                color
+            });
+
+            render();
+        };
+
+        selector.appendChild(btn);
+    }
+}
+
+/* Joker2枚 */
+
+for(let i=0;i<2;i++){
+
+    const btn=document.createElement("button");
+
+    btn.className="selectCard";
+
+    btn.textContent="Joker";
+
+    btn.onclick=()=>{
+
+        cards.push({
+            suit:"",
+            rank:"JOKER",
+            color:"black"
+        });
+
+        render();
+    };
+
+    selector.appendChild(btn);
+}
+
+/* 描画 */
 
 function render(){
- hand.innerHTML="";
- cards.forEach((card,i)=>{
-   const d=document.createElement("div");
-   d.className="playing-card "+card.color;
-   d.innerHTML=card.html;
-   d.onclick=()=>{cards.splice(i,1);render();};
-   hand.appendChild(d);
- });
+
+    const hand=document.getElementById("hand");
+
+    hand.innerHTML="";
+
+    cards.forEach((card,index)=>{
+
+        const div=document.createElement("div");
+
+        div.className=
+            "playing-card " + card.color;
+
+        if(card.rank==="JOKER"){
+
+            div.innerHTML=`
+                <div class="corner">
+                    <div class="rank">J</div>
+                    <div class="suit">★</div>
+                </div>
+
+                <div class="centerSuit">
+                    ★
+                </div>
+            `;
+        }
+
+        else{
+
+            div.innerHTML=`
+                <div class="corner">
+                    <div class="rank">${card.rank}</div>
+                    <div class="suit">${card.suit}</div>
+                </div>
+
+                <div class="centerSuit">
+                    ${card.suit}
+                </div>
+            `;
+        }
+
+        div.onclick=()=>{
+
+            cards.splice(index,1);
+
+            render();
+        };
+
+        hand.appendChild(div);
+    });
+
+    enableDrag();
 }
 
-function addCard(suit,rank,color){
- cards.push({
-   rank,color,
-   html:`<div>${suit}${rank}</div><div style="text-align:center;font-size:22px">${suit}</div><div style="text-align:right">${rank}${suit}</div>`
- });
- render();
+/* ドラッグ並び替え */
+
+let sortable;
+
+function enableDrag(){
+
+    if(sortable){
+        sortable.destroy();
+    }
+
+    sortable = Sortable.create(
+        document.getElementById("hand"),
+        {
+            animation:150,
+
+            onEnd(evt){
+
+                const moved=
+                    cards.splice(evt.oldIndex,1)[0];
+
+                cards.splice(
+                    evt.newIndex,
+                    0,
+                    moved
+                );
+            }
+        }
+    );
 }
 
-function addJoker(){
- cards.push({
-   rank:"JOKER",color:"black",
-   html:`<div>JOKER</div><div style="text-align:center;font-size:18px">★</div><div style="text-align:right">JOKER</div>`
- });
- render();
-}
+/* 自動ソート */
 
 function sortHand(){
- cards.sort((a,b)=>order[a.rank]-order[b.rank]);
- render();
+
+    cards.sort((a,b)=>{
+
+        const rankDiff =
+            rankOrder[a.rank]
+            - rankOrder[b.rank];
+
+        if(rankDiff!==0){
+            return rankDiff;
+        }
+
+        return suitOrder[a.suit]
+            - suitOrder[b.suit];
+    });
+
+    render();
 }
 
-function resetHand(){cards.length=0;render();}
+/* 全消去 */
 
-const area=document.getElementById("cards");
-for(const [suit,color] of suits){
- for(const rank of ranks){
-  const b=document.createElement("button");
-  b.className="card";
-  b.textContent=suit+rank;
-  b.onclick=()=>addCard(suit,rank,color);
-  area.appendChild(b);
- }
+function resetHand(){
+
+    cards.length=0;
+
+    render();
 }
-for(let i=0;i<2;i++){
- const b=document.createElement("button");
- b.className="card";
- b.textContent="Joker";
- b.onclick=addJoker;
- area.appendChild(b);
+
+/* PNG保存 */
+
+async function savePNG(){
+
+    const canvas = await html2canvas(
+        document.getElementById("hand"),
+        {
+            scale:3,
+            backgroundColor:"#ffffff"
+        }
+    );
+
+    const link=document.createElement("a");
+
+    link.download="hand.png";
+
+    link.href=
+        canvas.toDataURL("image/png");
+
+    link.click();
 }
+
+render();
+
 </script>
-</body></html>
+
+</body>
+</html>
