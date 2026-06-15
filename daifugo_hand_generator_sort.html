@@ -44,21 +44,20 @@ button{
 }
 
 #captureArea{
-    display:inline-block;
     background:white;
-    padding:20px;
     border-radius:10px;
+    padding:20px;
+    display:inline-block;
+    max-width:100%;
 }
 
 #hand{
-    min-height:140px;
-
     display:flex;
     flex-wrap:wrap;
-
     align-items:flex-start;
-
-    gap:0;
+    row-gap:12px;
+    min-height:120px;
+    padding-left:50px;
 }
 
 /* カード */
@@ -70,8 +69,6 @@ button{
     width:70px;
     height:100px;
 
-    display:inline-block;
-
     background:white;
 
     border:1px solid black;
@@ -79,17 +76,13 @@ button{
 
     margin-left:-50px;
 
-    vertical-align:top;
-
     cursor:grab;
 
     user-select:none;
 
     box-sizing:border-box;
-}
 
-.playing-card:first-child{
-    margin-left:0;
+    flex:0 0 auto;
 }
 
 .red{
@@ -138,20 +131,8 @@ button{
     opacity:0.85;
 }
 
-.capture-mode{
-
-    display:flex !important;
-
-    flex-wrap:wrap !important;
-
-    width:900px;
-
-    align-content:flex-start;
-}
-
 </style>
 </head>
-
 <body>
 
 <h1>大富豪 手札ジェネレーター</h1>
@@ -179,9 +160,10 @@ const suits=[
     ["♣","black"]
 ];
 
-const ranks=[
-    "A","2","3","4","5","6","7",
-    "8","9","10","J","Q","K"
+const displayRanks=[
+    "3","4","5","6","7",
+    "8","9","10","J",
+    "Q","K","A","2"
 ];
 
 const rankOrder={
@@ -210,25 +192,19 @@ const suitOrder={
 
 const selector=document.getElementById("cardSelector");
 
-/* カード選択ボタン生成 */
-
-const displayRanks = [
-    "3","4","5","6","7",
-    "8","9","10","J",
-    "Q","K","A","2"
-];
+/* ボタン生成 */
 
 for(const rank of displayRanks){
 
     for(const [suit,color] of suits){
 
-        const btn = document.createElement("button");
+        const btn=document.createElement("button");
 
-        btn.className = "selectCard";
+        btn.className="selectCard";
 
-        btn.textContent = suit + rank;
+        btn.textContent=suit+rank;
 
-        btn.onclick = () => {
+        btn.onclick=()=>{
 
             cards.push({
                 suit,
@@ -243,7 +219,7 @@ for(const rank of displayRanks){
     }
 }
 
-/* Joker2枚 */
+/* Joker */
 
 for(let i=0;i<2;i++){
 
@@ -310,7 +286,9 @@ function render(){
             `;
         }
 
-        div.onclick=()=>{
+        div.onclick=(e)=>{
+
+            if(div.classList.contains("sortable-chosen")) return;
 
             cards.splice(index,1);
 
@@ -323,7 +301,7 @@ function render(){
     enableDrag();
 }
 
-/* ドラッグ並び替え */
+/* ドラッグ */
 
 let sortable;
 
@@ -353,13 +331,13 @@ function enableDrag(){
     );
 }
 
-/* 自動ソート */
+/* ソート */
 
 function sortHand(){
 
     cards.sort((a,b)=>{
 
-        const rankDiff =
+        const rankDiff=
             rankOrder[a.rank]
             - rankOrder[b.rank];
 
@@ -387,23 +365,13 @@ function resetHand(){
 
 async function savePNG(){
 
-    const hand =
-        document.getElementById("hand");
-
-    hand.classList.add("capture-mode");
-
-    await new Promise(r =>
-        setTimeout(r,100));
-
-    const canvas = await html2canvas(
+    const canvas=await html2canvas(
         document.getElementById("captureArea"),
         {
             scale:3,
             backgroundColor:"#ffffff"
         }
     );
-
-    hand.classList.remove("capture-mode");
 
     const link=document.createElement("a");
 
